@@ -15,11 +15,42 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestLink {
 
     private WebDriver driver;
-    private WebDriverWait wait;;
+    private MtsMainPage mainPage;
 
-    private final By DETAILS_LINK_LOCATOR = By.cssSelector("a[href*='/help/poryadok-oplaty-i-bezopasnost-internet-platezhey/']");
-    private final By ACCEPT_COOKIES_BUTTON_LOCATOR = By.id("cookie-agree");
-    private final String EXPECTED_DETAILS_URL = "https://www.mts.by/help/poryadok-oplaty-i-bezopasnost-internet-platezhey/";
+    public static class MtsMainPage {
+        private final WebDriver driver;
+        private final WebDriverWait wait;
+
+        private final By DETAILS_LINK = By.cssSelector("a[href*='/help/poryadok-oplaty-i-bezopasnost-internet-platezhey/']");
+        private final By COOKIE_BUTTON = By.id("cookie-agree");
+
+        public MtsMainPage(WebDriver driver) {
+            this.driver = driver;
+            this.wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        }
+
+        public void open() {
+            driver.get("https://www.mts.by/");
+        }
+
+        public void acceptCookiesIfPresent() {
+            try {
+                wait.until(ExpectedConditions.elementToBeClickable(COOKIE_BUTTON)).click();
+            } catch (Exception e) {
+                System.out.println("Кнопка куки не появилась или не кликабельна");
+            }
+        }
+
+        public void clickDetailsLink() {
+            WebElement link = wait.until(ExpectedConditions.elementToBeClickable(DETAILS_LINK));
+            assertTrue(link.isDisplayed(), "Ссылка 'Подробнее о сервисе' должна быть видимой.");
+            link.click();
+        }
+
+        public boolean waitForUrl(String expectedUrl) {
+            return wait.until(ExpectedConditions.urlToBe(expectedUrl));
+        }
+    }
 
     @BeforeEach
     public void setup() {
@@ -27,20 +58,18 @@ public class TestLink {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
         driver = new ChromeDriver(options);
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         driver.manage().window().maximize();
+        mainPage = new MtsMainPage(driver);
     }
 
     @Test
-    public void testLink() {
-        driver.get("https://www.mts.by/");
-        wait.until(ExpectedConditions.elementToBeClickable(ACCEPT_COOKIES_BUTTON_LOCATOR)).click();
-        WebElement detailsLink = wait.until(ExpectedConditions.elementToBeClickable(DETAILS_LINK_LOCATOR));
-        assertTrue(detailsLink.isDisplayed(), "Ссылка 'Подробнее о сервисе' должна быть видимой.");
-        detailsLink.click();
-        Boolean urlChanged = wait.until(ExpectedConditions.urlToBe(EXPECTED_DETAILS_URL));
-        assertTrue(urlChanged, "Переход по ссылке 'Подробнее о сервисе' не привел на ожидаемую страницу.");
+    public void testDetailsLinkNavigation() {
+        String expectedUrl = "https://www.mts.by/help/poryadok-oplaty-i-bezopasnost-internet-platezhey/";
+        mainPage.open();
+        mainPage.acceptCookiesIfPresent();
+        mainPage.clickDetailsLink();
+        boolean isCorrectUrl = mainPage.waitForUrl(expectedUrl);
+        assertTrue(isCorrectUrl, "Переход по ссылке 'Подробнее о сервисе' не привел на ожидаемую страницу.");
         System.out.println("Тест успешно пройден: Ссылка ведет на корректную страницу помощи.");
     }
 

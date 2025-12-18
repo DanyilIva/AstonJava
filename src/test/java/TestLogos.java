@@ -17,14 +17,43 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestLogos {
 
     private WebDriver driver;
-    private WebDriverWait wait;
+    private MtsPaymentPage mtsPaymentPage;
 
-    private final By VISA_LOGO_LOCATOR = By.cssSelector("img[alt='Visa']");
-    private final By VISA_VERIFIED_LOCATOR = By.cssSelector("img[alt='Verified By Visa']");
-    private final By MASTERCARD_LOGO_LOCATOR = By.cssSelector("img[alt='MasterCard']");
-    private final By MASTERCARD_SECURE_LOCATOR = By.cssSelector("img[alt='MasterCard Secure Code']");
-    private final By BELKART_LOGO_LOCATOR = By.cssSelector("img[alt='Белкарт']");
-    private final By PAYMENT_SECTION_LOCATOR = By.cssSelector("#pay-section");
+    public static class MtsPaymentPage {
+        private final WebDriver driver;
+        private final WebDriverWait wait;
+
+        private final By VISA_LOGO_LOCATOR = By.cssSelector("img[alt='Visa']");
+        private final By VISA_VERIFIED_LOCATOR = By.cssSelector("img[alt='Verified By Visa']");
+        private final By MASTERCARD_LOGO_LOCATOR = By.cssSelector("img[alt='MasterCard']");
+        private final By MASTERCARD_SECURE_LOCATOR = By.cssSelector("img[alt='MasterCard Secure Code']");
+        private final By BELKART_LOGO_LOCATOR = By.cssSelector("img[alt='Белкарт']");
+        private final By PAYMENT_SECTION_LOCATOR = By.cssSelector("#pay-section");
+
+        public MtsPaymentPage(WebDriver driver) {
+            this.driver = driver;
+            this.wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        }
+
+        public void open() {
+            driver.get("https://www.mts.by/");
+            wait.until(ExpectedConditions.visibilityOfElementLocated(PAYMENT_SECTION_LOCATOR));
+        }
+
+        public void checkLogoPresenceAndVisibility(By locator, String logoName) {
+            List<WebElement> logos = driver.findElements(locator);
+            assertFalse(logos.isEmpty(), "Логотип платежной системы " + logoName + " должен присутствовать на странице.");
+            assertTrue(logos.get(0).isDisplayed(), "Логотип платежной системы " + logoName + " должен быть видимым.");
+        }
+
+        public void verifyAllLogosArePresent() {
+            checkLogoPresenceAndVisibility(VISA_LOGO_LOCATOR, "Visa");
+            checkLogoPresenceAndVisibility(VISA_VERIFIED_LOCATOR, "Verified by Visa");
+            checkLogoPresenceAndVisibility(MASTERCARD_LOGO_LOCATOR, "Mastercard");
+            checkLogoPresenceAndVisibility(MASTERCARD_SECURE_LOCATOR, "Mastercard Secure Code");
+            checkLogoPresenceAndVisibility(BELKART_LOGO_LOCATOR, "Белкарт");
+        }
+    }
 
     @BeforeEach
     public void setup() {
@@ -33,26 +62,15 @@ public class TestLogos {
         options.addArguments("--remote-allow-origins=*");
         driver = new ChromeDriver(options);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         driver.manage().window().maximize();
+        mtsPaymentPage = new MtsPaymentPage(driver);
     }
 
     @Test
-    public void testLogos() {
-        driver.get("https://www.mts.by/");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(PAYMENT_SECTION_LOCATOR));
-        checkLogoPresence(VISA_LOGO_LOCATOR, "Visa");
-        checkLogoPresence(VISA_VERIFIED_LOCATOR, "Verified by Visa");
-        checkLogoPresence(MASTERCARD_LOGO_LOCATOR, "Mastercard");
-        checkLogoPresence(MASTERCARD_SECURE_LOCATOR, "Mastercard Secure Code");
-        checkLogoPresence(BELKART_LOGO_LOCATOR, "Белкарт");
+    public void testLogosPresence() {
+        mtsPaymentPage.open();
+        mtsPaymentPage.verifyAllLogosArePresent();
         System.out.println("Тест успешно пройден: Все 5 логотипов платежных систем присутствуют и видимы.");
-    }
-
-    private void checkLogoPresence(By locator, String logoName) {
-        List<WebElement> logos = driver.findElements(locator);
-        assertFalse(logos.isEmpty(), "Логотип платежной системы " + logoName + " должен присутствовать на странице.");
-        assertTrue(logos.get(0).isDisplayed(), "Логотип платежной системы " + logoName + " должен быть видимым.");
     }
 
     @AfterEach

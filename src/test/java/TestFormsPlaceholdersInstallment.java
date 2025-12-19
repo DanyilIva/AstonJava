@@ -1,6 +1,9 @@
 import io.github.bonigarcia.wdm.WebDriverManager;
+import io.qameta.allure.Description;
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -14,6 +17,7 @@ import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@DisplayName("Тестирование плейсхолдеров оплаты в рассрочку")
 public class TestFormsPlaceholdersInstallment {
 
     private WebDriver driver;
@@ -37,11 +41,13 @@ public class TestFormsPlaceholdersInstallment {
             this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
         }
 
+        @Step("Открыть главную страницу МТС и принять куки")
         public void open() {
             driver.get("https://www.mts.by/");
             wait.until(ExpectedConditions.elementToBeClickable(COOKIE_BUTTON)).click();
         }
 
+        @Step("Переключиться на вкладку 'Оплата в рассрочку'")
         public void selectInstallmentTab() {
             wait.until(ExpectedConditions.elementToBeClickable(HEADER_BUTTON)).click();
             wait.until(ExpectedConditions.visibilityOfElementLocated(SELECT_WRAPPER_OPENED));
@@ -49,19 +55,23 @@ public class TestFormsPlaceholdersInstallment {
             wait.until(ExpectedConditions.visibilityOfElementLocated(ACTIVE_PAYMENT_FORM));
         }
 
+        @Step("Получить текст плейсхолдера для поля")
         private String getPlaceholderText(By inputLocator) {
             WebElement inputElement = wait.until(ExpectedConditions.elementToBeClickable(inputLocator));
             return inputElement.getAttribute("placeholder");
         }
 
+        @Step("Проверка плейсхолдера номера счета")
         public String getAccountNumberPlaceholder() {
             return getPlaceholderText(INPUT_ACCOUNT_NUMBER);
         }
 
+        @Step("Проверка плейсхолдера суммы")
         public String getAmountPlaceholder() {
             return getPlaceholderText(INPUT_AMOUNT);
         }
 
+        @Step("Проверка плейсхолдера E-mail")
         public String getEmailPlaceholder() {
             return getPlaceholderText(INPUT_EMAIL);
         }
@@ -79,12 +89,14 @@ public class TestFormsPlaceholdersInstallment {
     }
 
     @Test
+    @DisplayName("Проверка плейсхолдеров в форме оплаты в рассрочку")
+    @Description("Тест проверяет корректность текста подсказок (placeholders) в полях ввода номера счета, суммы и e-mail для формы оплаты в рассрочку.")
     public void testPlaceholdersForInstallmentServices() {
         paymentPage.selectInstallmentTab();
+
         assertEquals("Номер счета на 44", paymentPage.getAccountNumberPlaceholder());
         assertEquals("Сумма", paymentPage.getAmountPlaceholder());
         assertEquals("E-mail для отправки чека", paymentPage.getEmailPlaceholder());
-        System.out.println("Тест успешно пройден: Все плейсхолдеры для 'Оплата в рассрочку' верны.");
     }
 
     @AfterEach
